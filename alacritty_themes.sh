@@ -38,7 +38,7 @@ invalid_theme_path() {
 
 list_themes() {
 
-        tput clear
+        # tput clear
         printf "${Y}::${N} Themes available:\n\n"
 
         local themes_files=("${1}"/*.toml)
@@ -100,16 +100,19 @@ theme_selection() {
                 if [[ "${ans_selection}" -ge 1 && 
                 "${ans_selection}" -le "${#themes_files[@]}" ]]; then
                         theme_path="${themes_files[$((ans_selection - 1))]}"
-                        printf "Selected theme : ${theme_path}\n"
+                        printf "\n\n"
+                        printf "${C}[>]${N} Selected theme : ${P}%s${N}\n" \
+                        "$(basename ${theme_path})"
                         preview_theme "${theme_path}"
                 fi
 
                 if [[ -z "${ans_selection}" ]]; then
                         printf "${G}[@]${N} Applying theme.\n"
+                        rm -f "${ALAC_CONF_PATH}.tmp.bak"
                         exit 0
                 fi
 
-                trap revert_theme SIGINT
+                trap 'printf "\n" && revert_theme' SIGINT
         done
 
 }
@@ -119,9 +122,6 @@ preview_theme() {
         local theme_path="${1}"
 
         if [[ -f "${ALAC_CONF_PATH}" ]]; then
-                if [[ ! -f "${ALAC_CONF_PATH}.tmp.bak" ]]; then
-                        cp -a "${ALAC_CONF_PATH}" "${ALAC_CONF_PATH}.tmp.bak"
-                fi
                 awk -v theme_path="${theme_path}" '
                         BEGIN { in_block = 0 }
                         /^\s*import = \[/ { 
@@ -139,7 +139,6 @@ preview_theme() {
                 ' "${ALAC_CONF_PATH}" > "${ALAC_CONF_PATH}.tmp" && 
                 mv "${ALAC_CONF_PATH}.tmp" "${ALAC_CONF_PATH}"
 
-                printf "Preview of %s\n" "$(basename ${theme_path})"
 
         else
                 printf "${R}[!] Alacritty configuration file could not be "
@@ -151,6 +150,8 @@ preview_theme() {
 revert_theme() {
 
         if [[ -f "${ALAC_CONF_PATH}.tmp.bak" ]]; then
+                printf "${C}[!] Reverting to the old configuration file."
+                printf "${N}\n\n"
                 mv "${ALAC_CONF_PATH}.tmp.bak" "${ALAC_CONF_PATH}"
         fi
 
@@ -169,7 +170,7 @@ main() {
         N="\033[0m"   # RESET
 
         # Global variables
-        THEMES_PATH="${HOME}/Documents/Developement/Github/alacritty-themes/themes"
+        THEMES_PATH="${HOME}/Documents/Developement/Github/2ELCN0168-alacritty-themes/themes"
         ALAC_CONF_PATH="${HOME}/.config/alacritty/alacritty.toml"
 
         if [[ -z "${THEMES_PATH}" ]]; then
@@ -180,6 +181,7 @@ main() {
                 create_configuration "${ALAC_CONF_PATH}"
         fi
 
+        cp -a "${ALAC_CONF_PATH}" "${ALAC_CONF_PATH}.tmp.bak"
         theme_selection "${THEMES_PATH}"
 
         exit 0
